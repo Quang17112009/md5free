@@ -2,17 +2,18 @@ import hashlib
 import json
 import os
 import joblib
-from telegram.ext import ( # Corrected: 'from' before 'telegram.ext'
+from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
     filters,
     ContextTypes,
+    Update, # Đã thêm vào để sửa lỗi NameError: name 'Update' is not defined
 )
 from typing import Dict, Tuple
 
 class MD5CharacterAnalyzer:
-    def __init__(self): # Corrected: '__init__' instead of 'init'
+    def __init__(self): # Đã sửa từ 'init' thành '__init__'
         self.weights = {
             '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
             'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15
@@ -43,7 +44,7 @@ class MD5CharacterAnalyzer:
         return result, confidence, analysis
 
 class TelegramBot:
-    def __init__(self, token: str, admin_id: int): # Corrected: '__init__' instead of 'init'
+    def __init__(self, token: str, admin_id: int): # Đã sửa từ 'init' thành '__init__'
         self.app = Application.builder().token(token).build()
         self.admin_id = admin_id
         self.analyzer = MD5CharacterAnalyzer()
@@ -56,10 +57,10 @@ class TelegramBot:
             try:
                 with open(self.data_file, 'r') as f:
                     data = json.load(f)
-                    # Ensure all user IDs are integers when loading
+                    # Đảm bảo tất cả các khóa ID người dùng là số nguyên
                     self.users = {int(k): v for k, v in data.items()}
-            except (json.JSONDecodeError, OSError) as e: # Added error handling
-                print(f"Error loading user data: {e}")
+            except (json.JSONDecodeError, OSError) as e:
+                print(f"Lỗi khi tải dữ liệu người dùng: {e}")
                 self.users = {}
         else:
             self.users = {}
@@ -68,19 +69,18 @@ class TelegramBot:
         try:
             with open(self.data_file, 'w') as f:
                 json.dump(self.users, f, indent=2)
-        except OSError as e: # Added error handling
-            print(f"Error saving user data: {e}")
+        except OSError as e:
+            print(f"Lỗi khi lưu dữ liệu người dùng: {e}")
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.effective_user.id
-        # Use full_name if available, otherwise username, otherwise first_name
         username = update.effective_user.full_name or update.effective_user.username or update.effective_user.first_name
 
         if user_id not in self.users:
             self.users[user_id] = {"balance": 10, "history": [], "first_start": True}
             welcome_msg = (
                 f"✨ Chào {username}\n"
-                "🤖 Tool hỗ trợ game hit.club\n"
+                "🤖 Tool Md5 Free by @heheviptool\n"
                 "➡️ Gửi mã MD5 để bắt đầu dự đoán\n"
                 "🔹 Lệnh Sử Dụng\n"
                 ">> /info - Xem Hồ Sơ\n"
@@ -94,7 +94,7 @@ class TelegramBot:
         else:
             welcome_msg = (
                 f"✨ Chào {username}\n"
-                "🤖 Tool hỗ trợ game hit.club\n"
+                "🤖 Tool Md5 Free by @heheviptool\n"
                 "➡️ Gửi mã MD5 để bắt đầu dự đoán\n"
                 "🔹 Lệnh Sử Dụng\n"
                 ">> /info - Xem Hồ Sơ\n"
@@ -104,7 +104,6 @@ class TelegramBot:
                 ">> /unxu <id> <xu> - Trừ Xu\n"
                 ">> /thongke - Xem Thống Kê User"
             )
-            # Ensure first_start is explicitly set to False if user already exists
             self.users[user_id]["first_start"] = False
 
         self.save_user_data()
@@ -113,7 +112,7 @@ class TelegramBot:
     async def info(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.effective_user.id
         username = update.effective_user.full_name or update.effective_user.username or update.effective_user.first_name
-        user_data = self.users.get(user_id, {"balance": 0, "history": [], "first_start": False}) # Default if user not found
+        user_data = self.users.get(user_id, {"balance": 0, "history": [], "first_start": False})
 
         info_msg = (
             f"👤 Tên: {username}\n"
@@ -131,10 +130,10 @@ class TelegramBot:
             return
 
         history_msg = "📜 Lịch Sử Dự Đoán\n\n"
-        # Display only a few recent entries to avoid very long messages
-        for md5, result in user_data["history"][-10:]: # Show last 10 entries
-            history_msg += f"Mã MD5: `{md5}` - Dự Đoán: {result}\n" # Added backticks for MD5
-        history_msg += "\n*Chỉ hiển thị 10 mục gần nhất." # Indicate truncation
+        # Chỉ hiển thị 10 mục gần nhất
+        for md5, result in user_data["history"][-10:]:
+            history_msg += f"Mã MD5: `{md5}` - Dự Đoán: {result}\n"
+        history_msg += "\n*Chỉ hiển thị 10 mục gần nhất."
 
         await update.message.reply_text(history_msg, parse_mode="Markdown")
 
@@ -145,7 +144,7 @@ class TelegramBot:
         try:
             args = context.args
             if len(args) != 2:
-                raise ValueError("Vui lòng nhập đúng định dạng: `/addxu <id> <xu>`") # Added backticks
+                raise ValueError("Vui lòng nhập đúng định dạng: `/addxu <id> <xu>`")
             target_id, amount = int(args[0]), int(args[1])
             if amount <= 0:
                 raise ValueError("Số xu phải lớn hơn 0")
@@ -158,18 +157,17 @@ class TelegramBot:
             await update.message.reply_text(
                 f"✅ **Đã cộng {amount} xu cho ID {target_id}. Số dư mới: {self.users[target_id]['balance']}**",
                 parse_mode="Markdown")
-            # Added check for send_message to ensure target_id exists in chat
             try:
                 await context.bot.send_message(
                     chat_id=target_id,
                     text=f"💸 **Bạn vừa được admin cộng {amount} xu. Số dư hiện tại: {self.users[target_id]['balance']}**",
                     parse_mode="Markdown")
             except Exception as e:
-                print(f"Could not send message to user {target_id}: {e}")
+                print(f"Không thể gửi thông báo tới người dùng {target_id}: {e}")
                 await update.message.reply_text(f"⚠️ Không thể gửi thông báo tới người dùng ID {target_id}.", parse_mode="Markdown")
         except ValueError as e:
             await update.message.reply_text(f"❌ Lỗi: {e}", parse_mode="Markdown")
-        except IndexError: # Catch if args are missing
+        except IndexError:
             await update.message.reply_text("❌ Lỗi: Vui lòng nhập đúng định dạng: `/addxu <id> <xu>`", parse_mode="Markdown")
 
     async def un_xu(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -179,7 +177,7 @@ class TelegramBot:
         try:
             args = context.args
             if len(args) != 2:
-                raise ValueError("Vui lòng nhập đúng định dạng: `/unxu <id> <xu>`") # Added backticks
+                raise ValueError("Vui lòng nhập đúng định dạng: `/unxu <id> <xu>`")
             target_id, amount = int(args[0]), int(args[1])
             if amount <= 0:
                 raise ValueError("Số xu phải lớn hơn 0")
@@ -196,18 +194,17 @@ class TelegramBot:
             await update.message.reply_text(
                 f"✅ Đã trừ {amount} xu từ ID {target_id}. Số dư mới: {self.users[target_id]['balance']}",
                 parse_mode="Markdown")
-            # Added check for send_message to ensure target_id exists in chat
             try:
                 await context.bot.send_message(
                     chat_id=target_id,
                     text=f"💸 Bạn vừa bị admin trừ {amount} xu. Số dư hiện tại: {self.users[target_id]['balance']}",
                     parse_mode="Markdown")
             except Exception as e:
-                print(f"Could not send message to user {target_id}: {e}")
+                print(f"Không thể gửi thông báo tới người dùng {target_id}: {e}")
                 await update.message.reply_text(f"⚠️ Không thể gửi thông báo tới người dùng ID {target_id}.", parse_mode="Markdown")
         except ValueError as e:
             await update.message.reply_text(f"❌ Lỗi: {e}", parse_mode="Markdown")
-        except IndexError: # Catch if args are missing
+        except IndexError:
             await update.message.reply_text("❌ Lỗi: Vui lòng nhập đúng định dạng: `/unxu <id> <xu>`", parse_mode="Markdown")
 
     async def thongke(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -221,20 +218,18 @@ class TelegramBot:
         for idx, (user_id, data) in enumerate(self.users.items(), 1):
             try:
                 chat = await context.bot.get_chat(user_id)
-                # Use full_name if available, otherwise username, otherwise first_name
                 username = chat.full_name or chat.username or chat.first_name
-            except Exception as e: # Catch exceptions if get_chat fails (e.g., user blocked bot)
-                username = f"[Unknown User {user_id}]" # Indicate unknown user
-                print(f"Could not get chat info for user {user_id}: {e}")
+            except Exception as e:
+                username = f"[Người dùng ẩn {user_id}]"
+                print(f"Không thể lấy thông tin chat cho người dùng {user_id}: {e}")
             stats_msg += f"{idx}. {username} - {user_id} - {data['balance']}\n"
         await update.message.reply_text(stats_msg, parse_mode="Markdown")
 
     async def handle_md5(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.effective_user.id
-        # Ensure user exists in self.users before proceeding
         if user_id not in self.users:
             self.users[user_id] = {"balance": 0, "history": [], "first_start": False}
-            self.save_user_data() # Save new user data immediately
+            self.save_user_data()
 
         if self.users[user_id]["balance"] < 1:
             await update.message.reply_text("❌ Bạn không đủ xu để dự đoán (cần 1 xu/lần).", parse_mode="Markdown")
@@ -243,13 +238,13 @@ class TelegramBot:
         try:
             result, confidence, analysis = self.analyzer.analyze_md5(md5_input)
             self.users[user_id]["balance"] -= 1
-            # Limit history to prevent it from growing indefinitely
-            if len(self.users[user_id]["history"]) >= 50: # Example: keep last 50 entries
-                self.users[user_id]["history"].pop(0) # Remove oldest entry
+            # Giới hạn lịch sử để tránh file quá lớn
+            if len(self.users[user_id]["history"]) >= 50: # Giữ 50 mục gần nhất
+                self.users[user_id]["history"].pop(0) # Xóa mục cũ nhất
             self.users[user_id]["history"].append((md5_input, result))
             self.save_user_data()
             response = (
-                "📊 KẾT QUẢ PHÂN TÍCH 📊\n\n"
+                "🎰 KẾT QUẢ PHÂN TÍCH 🎰\n\n"
                 f"🔢 Mã MD5: `{md5_input}`\n"
                 f"🎯 *Dự đoán*: {result} ({confidence}%)\n\n"
                 f"🔍 *Phân Tích*:\n"
@@ -269,15 +264,15 @@ class TelegramBot:
         self.app.add_handler(CommandHandler("addxu", self.add_xu))
         self.app.add_handler(CommandHandler("unxu", self.un_xu))
         self.app.add_handler(CommandHandler("thongke", self.thongke))
-        # MessageHandler should come after CommandHandlers to ensure commands are handled first
+        # MessageHandler nên được thêm sau CommandHandlers
         self.app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_md5))
         self.app.run_polling()
 
-if __name__ == "__main__": # Corrected: '__main__' instead of 'name == "main"'
-    # You should securely manage your bot token and admin ID.
-    # Avoid hardcoding sensitive information directly in your code for production.
-    # Consider using environment variables.
-    # Example: TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+if __name__ == "__main__": # Đã sửa từ 'name == "main"' thành '__name__ == "__main__"'
+    # TOKEN và ADMIN_ID nên được quản lý an toàn (ví dụ: biến môi trường)
+    # import os
+    # TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
     # ADMIN_ID = int(os.getenv("TELEGRAM_ADMIN_ID"))
     bot = TelegramBot(token="7749105278:AAF4q2n-WTZEsMFBXEvrhuYFSMVjkoeXMSg", admin_id=6915752059)
     bot.run()
+
