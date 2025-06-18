@@ -1,4 +1,4 @@
-import hashlib import json import os import joblib from telegram import Update from telegram.ext import ( Application, CommandHandler, MessageHandler, filters, ContextTypes, ) from typing import Dict, Tuple
+import hashlib import json import os import joblib telegram import Update from telegram.ext import ( Application, CommandHandler, MessageHandler, filters, ContextTypes, ) from typing import Dict, Tuple
 
 class MD5CharacterAnalyzer: def init(self): self.weights = { '0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, 'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15 }
 
